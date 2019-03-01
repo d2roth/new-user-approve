@@ -693,6 +693,11 @@ class pw_new_user_approve {
 	 * @return string
 	 */
 	public function welcome_user( $message ) {
+		// If we are on the login page with a checkemail status return early
+		if ( isset( $_GET['checkemail'] ) ) {
+			return $message;
+		}
+
 		if ( !isset( $_GET['action'] ) ) {
 			$welcome = nua_default_welcome_message();
 			$welcome = nua_do_email_tags( $welcome, array(
