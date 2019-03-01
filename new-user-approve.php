@@ -49,7 +49,6 @@ class pw_new_user_approve {
 		add_action( 'new_user_approve_deny_user', array( $this, 'delete_new_user_approve_transient' ), 11 );
 		add_action( 'deleted_user', array( $this, 'delete_new_user_approve_transient' ) );
 		//add_action( 'register_post', array( $this, 'request_admin_approval_email' ), 10, 3 );
-		add_action( 'register_post', array( $this, 'create_new_user' ), 10, 3 );
 		add_action( 'lostpassword_post', array( $this, 'lost_password' ) );
 		add_action( 'user_register', array( $this, 'add_user_status' ) );
 		add_action( 'user_register', array( $this, 'request_admin_approval_email_2' ) );
@@ -480,30 +479,6 @@ class pw_new_user_approve {
 		$user_email = stripslashes( $user->data->user_email );
 
 		$this->admin_approval_email( $user_login, $user_email );
-	}
-
-	/**
-	 * Create a new user after the registration has been validated. Normally,
-	 * when a user registers, an email is sent to the user containing their
-	 * username and password. The email does not get sent to the user until
-	 * the user is approved when using the default behavior of this plugin.
-	 *
-	 * @uses register_post
-	 * @param string $user_login
-	 * @param string $user_email
-	 * @param object $errors
-	 */
-	public function create_new_user( $user_login, $user_email, $errors ) {
-		if ( $errors->get_error_code() ) {
-			return;
-		}
-
-		// create the user
-		$user_pass = wp_generate_password( 12, false );
-		$user_id = wp_create_user( $user_login, $user_pass, $user_email );
-		if ( !$user_id ) {
-			$errors->add( 'registerfail', sprintf( __( '<strong>ERROR</strong>: Couldn&#8217;t register you... please contact the <a href="mailto:%s">webmaster</a> !' ), get_option( 'admin_email' ) ) );
-		}
 	}
 
 	/**
