@@ -62,7 +62,7 @@ class pw_new_user_approve {
 
 		// Filters
 		add_filter( 'wp_authenticate_user', array( $this, 'authenticate_user' ) );
-		add_filter( 'registration_errors', array( $this, 'show_user_pending_message' ) );
+		add_filter( 'wp_login_errors', array( $this, 'show_user_pending_message' ) );
 		add_filter( 'login_message', array( $this, 'welcome_user' ) );
 		add_filter( 'new_user_approve_validate_status_update', array( $this, 'validate_status_update' ), 10, 3 );
 		add_filter( 'shake_error_codes', array( $this, 'failure_shake' ) );
@@ -649,15 +649,17 @@ class pw_new_user_approve {
 	 *
 	 * @uses registration_errors
 	 */
-	public function show_user_pending_message( $errors ) {
-		if ( !empty( $_POST['redirect_to'] ) ) {
-			// if a redirect_to is set, honor it
-			wp_safe_redirect( $_POST['redirect_to'] );
-			exit();
+	public function show_user_pending_message($errors ) {
+
+		// if there is no registered "error" already and it it is not registered, let it do it's thing
+		if( $errors->get_error_code() != 'registered' ) {
+			return $errors;
 		}
 
-		// if there is an error already, let it do it's thing
-		if ( $errors->get_error_code() ) {
+		$error_codes = $errors->get_error_codes();
+
+		// Yes, we have a registered error but there are other errors too, so let them do their thing
+		if( count( $error_codes ) !== 1 ){
 			return $errors;
 		}
 
@@ -667,16 +669,22 @@ class pw_new_user_approve {
 		) );
 		$message = apply_filters( 'new_user_approve_pending_message', $message );
 
+		// Remove the standard registered message
+		$errors->remove( 'registered' );
+
+		// Add our custom error message
 		$errors->add( 'registration_required', $message, 'message' );
 
 		$success_message = __( 'Registration successful.', 'new-user-approve' );
 		$success_message = apply_filters( 'new_user_approve_registration_message', $success_message );
 
+
 		login_header( __( 'Pending Approval', 'new-user-approve' ), '<p class="message register">' . $success_message . '</p>', $errors );
 		login_footer();
 
-		// an exit is necessary here so the normal process for user registration doesn't happen
+		// an exit is necessary here so the login form does not show up and duplicate the header/footer
 		exit();
+		// return $errors;
 	}
 
 	/**
